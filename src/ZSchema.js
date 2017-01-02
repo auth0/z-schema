@@ -32,6 +32,7 @@
 
     var Promise = require('bluebird');
     var request = require('request');
+    var validatorModule = require('validator');
 
     // z-schema used Q before bluebird, so alias is here to preserve compatibility
     Promise.prototype.fail = Promise.prototype.catch;
@@ -459,8 +460,16 @@
                 // http://fightingforalostcause.net/misc/2006/compare-email-regex.php
                 return typeof email !== 'string' || Utils.getRegExp(/^[-a-z0-9~!$%^&*_=+}{\'?]+(\.[-a-z0-9~!$%^&*_=+}{\'?]+)*@([a-z0-9_][-a-z0-9_]*(\.[-a-z0-9_]+)*\.(aero|arpa|biz|com|coop|edu|gov|info|int|mil|museum|name|net|org|pro|travel|mobi|[a-z][a-z])|([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}))(:[0-9]{1,5})?$/i).test(email);
             }
-            // use less-strict but still safe regex from owasp: https://www.owasp.org/index.php/OWASP_Validation_Regex_Repository
-            return Utils.getRegExp('^[a-zA-Z0-9+&*-]+(?:\.[a-zA-Z0-9_+&*-]+)*@(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,7}$').test(email);
+
+            // from: https://github.com/zaggino/z-schema/blob/master/src/FormatValidators.js#L46
+            if (typeof email !== "string") {
+                // If it is not a string the format validation does not make sense, we are not validating here the type.
+                // In the schema you should have "type": "string" which would fail with the proper type error.
+                // We return "true" to simply pass and fail only on type check.
+                // If we returned "false" we would have two errors one for the mistype and another for the misformat.
+                return true;
+            }
+            return validatorModule.isEmail(email, { "require_tld": true });
         },
         'hostname': function (hostname) {
             if (!Utils.isString(hostname)) {
