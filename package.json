@@ -4,7 +4,8 @@
   "version": "2.4.10",
   "dependencies": {
     "bluebird": ">=2.2.2",
-    "request": ">=2.39.0"
+    "request": ">=2.39.0",
+    "validator": "^6.2.0"
   },
   "homepage": "https://github.com/zaggino/z-schema",
   "keywords": [
