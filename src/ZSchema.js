@@ -469,7 +469,24 @@
                 // If we returned "false" we would have two errors one for the mistype and another for the misformat.
                 return true;
             }
-            return validatorModule.isEmail(email, { "require_tld": true });
+
+            // "require_tld" defines whether or not the Top-Level Domain is validated
+            // For backward compatibility we need to disable tld check to allow emails like john@localhost
+            // See https://github.com/chriso/validator.js/blob/6.2.0/src/lib/isFQDN.js#L19-L24
+            // We will validate enforcing it first, in case of failure we will validate with the flag off afterwards
+            if (validatorModule.isEmail(email, { "require_tld": true })) {
+                return true;
+            }
+
+            const isValidWithoutTLD = validatorModule.isEmail(email, { "require_tld": false });
+            if (isValidWithoutTLD && validator.options.logger) {
+                // To be able to upgrade to v3 later on we will log the cases where email would fail for "require_tld": true
+                validator.options.logger.info('Email without top level domain', {
+                    log_type: 'email_validation_tld',
+                    email: email
+                });
+            }
+            return isValidWithoutTLD;
         },
         'hostname': function (hostname) {
             if (!Utils.isString(hostname)) {
